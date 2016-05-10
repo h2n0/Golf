@@ -13,7 +13,7 @@ public class Caster extends Init{
 	private static int s = 2;
 	
 	public Caster(){
-		super("Caster", w * s, h * s);
+		super("Golf V0.1", w * s, h * s);
 		useCustomBufferedImage(w, h, false);
 		setInput(new Input(this, Input.KEYS, Input.MOUSE));
 		skipInit();

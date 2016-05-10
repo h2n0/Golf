@@ -9,6 +9,7 @@ public class Ball {
 	public Point pos;
 	public Point respawn;
 	private int fallTime;
+	private boolean sunk;
 	private int r;
 	
 	public boolean falling, canMove;
@@ -26,6 +27,7 @@ public class Ball {
 		this.canMove = true;
 		this.texmap = new TextureMap("/assets/BallMap.png");
 		this.fallTime = 0;
+		this.sunk = false;
 		
 		genColor();
 	}
@@ -82,11 +84,15 @@ public class Ball {
 		this.vy *= 0.98;
 		
 		if(this.vx != 0f || this.vy != 0f){
-			if(Math.abs(this.vx) < 0.1)this.vx = 0f;
-			if(Math.abs(this.vy) < 0.1)this.vy = 0f;
+			if(Math.abs(this.vx) < 0.05)this.vx = 0f;
+			if(Math.abs(this.vy) < 0.05)this.vy = 0f;
 		}else if(this.vx == 0f && this.vy == 0f){
 			this.canMove = true;
 			setRespawnPos();
+		}
+		
+		if(c == 0){//Hole
+			this.sunk = true;
 		}
 	}
 	
@@ -121,5 +127,9 @@ public class Ball {
 	
 	public void genColor(){
 		this.color = (int)Math.floor(Math.random() * 0xFFFFFF);
+	}
+	
+	public boolean hasBeenSunk(){
+		return this.sunk;
 	}
 }

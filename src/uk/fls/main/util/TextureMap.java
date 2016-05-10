@@ -10,11 +10,25 @@ public class TextureMap {
 	private final int w,h;
 	
 	public TextureMap(String place){
+		int[][] d = getPixles(place);
+		this.data = d[1];
+		this.w = d[0][0];
+		this.h = d[0][1];
+	}
+	
+	public int getPixel(int x,int y){
+		int dx = (x % w);
+		int dy = (y / w) % h;
+		int c = this.data[dx + dy * w];
+		return c;
+	}
+	
+	public static int[][] getPixles(String place){
 		BufferedImage img = new SplitImage(place).load();
-		this.w = img.getWidth();
-		this.h = img.getHeight();
+		int w = img.getWidth();
+		int h = img.getHeight();
 		
-		this.data = new int[w * h];
+		int[] data = new int[w * h];
 		
 		int[] current = new int[w * h];
 		img.getRGB(0, 0, w, h, current, 0, w);
@@ -41,13 +55,7 @@ public class TextureMap {
 				res[i] = rgb;
 			}
 		}
-		this.data = res;
-	}
-	
-	public int getPixel(int x,int y){
-		int dx = (x % w);
-		int dy = (y / w) % h;
-		int c = this.data[dx + dy * w];
-		return c;
+		
+		return new int[][]{{w,h},res};
 	}
 }
