@@ -26,6 +26,8 @@ public class RenderScreen extends Screen {
 	
 	private int floor;
 	private int dfloor;
+	
+	private Ball b;
 
 	public void postInit() {
 		this.r = new Renderer(this.game.image);
@@ -60,14 +62,31 @@ public class RenderScreen extends Screen {
 
 		this.floor = this.r.makeRGB(255,123,0);
 		this.dfloor = (this.floor & 0xFEFEFE) >> 1;
+		
+		this.b = new Ball(180,100);
+		//this.b.move(-1,0);
 	}
 
 	@Override
 	public void update() {
 		scale = 3;
 		
-		this.mx = this.input.mouse.getX()/(scale*2)/2;
-		this.my = this.input.mouse.getY()/(scale)/2;
+		this.mx = this.input.mouse.getX()/scale*scale/2;
+		this.my = this.input.mouse.getY()/scale*scale/2;
+		
+		if(this.input.leftMouseButton.justClicked()){
+			
+			
+			int ax = b.pos.getIX() - mx;
+			int ay = b.pos.getIY() - my;
+			float diff = (float)Math.atan2(ay, ax);
+			int amt = 20;
+			float dx = (float)Math.cos(diff);
+			float dy = (float)Math.sin(diff);
+			this.b.move(dx, dy);
+		}
+		
+		this.b.update(this.r);
 	}
 
 	@Override
@@ -84,6 +103,8 @@ public class RenderScreen extends Screen {
 				}
 			}
 		}
+		
+		this.b.render(r);
 		
 		this.r.finaliseRender();
 	}
