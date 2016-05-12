@@ -1,9 +1,7 @@
 package uk.fls.main.screens;
 
 import java.awt.Graphics;
-import java.awt.image.BufferedImage;
 
-import fls.engine.main.art.SplitImage;
 import fls.engine.main.screen.Screen;
 import fls.engine.main.util.Renderer;
 import uk.fls.main.util.TextureMap;
@@ -28,6 +26,10 @@ public class RenderScreen extends Screen {
 	
 	private int floor;
 	private int dfloor;
+	
+	private int maxPower;
+	
+	private int bgColor;
 	
 	private Ball b;
 
@@ -65,6 +67,8 @@ public class RenderScreen extends Screen {
 		this.floor = this.r.makeRGB(255,123,0);
 		this.dfloor = (this.floor & 0xFEFEFE) >> 1;
 		//this.b.move(-1,0);
+		this.maxPower = 2;
+		this.bgColor = r.makeRGB(123, 123, 123);
 	}
 
 	private float pow = 0;
@@ -72,30 +76,33 @@ public class RenderScreen extends Screen {
 	@Override
 	public void update() {
 		scale = 3;
+		maxPower = 2;
 		boolean click = this.input.leftMouseButton.justClicked();
 		this.mx = this.input.mouse.getX()/scale*scale/2;
 		this.my = this.input.mouse.getY()/scale*scale/2;
 		
-		
-		if(!click && this.prevClick){
-			int ax = b.pos.getIX() - mx;
-			int ay = b.pos.getIY() - my;
-			float diff = (float)Math.atan2(ay, ax);
-			int amt = 20;
-			float dx = (float)Math.cos(diff);
-			float dy = (float)Math.sin(diff);
-			this.b.move(dx * pow, dy * pow);
-			pow = 0;
-		}else{
-			if(click){
-				pow += 0.05%1;
+		if(this.b.canMove){
+			if(!click && this.prevClick){
+				int ax = b.pos.getIX() - mx;
+				int ay = b.pos.getIY() - my;
+				float diff = (float)Math.atan2(ay, ax);
+				float dx = (float)Math.cos(diff);
+				float dy = (float)Math.sin(diff);
+				this.b.move(dx * (pow * this.maxPower), dy * (pow * this.maxPower));
+				pow = 0;
+			}else{
+				if(click){
+					pow += 0.05;
+					
+					pow %= this.maxPower;
+				}
 			}
 		}
 		
 		this.b.update(this.r);
 		
 		if(this.b.hasBeenSunk()){
-			
+			System.out.println(this.b.shots);
 		}
 		
 		this.prevClick = click;
@@ -103,21 +110,34 @@ public class RenderScreen extends Screen {
 
 	@Override
 	public void render(Graphics g) {
-		this.r.fill(r.makeRGB(123, 123, 123));
+		this.r.fill(this.bgColor);
 
 		boolean maker = false;
+		
+		int hxo = 0;
 		
 		if(!maker){
 			int l = level.length;
 			for(int i = 0; i < l; i++){
 				for(int j = 0; j < l; j++){
-					if(level[i][j]==1 || level[i][j] == 2)drawCube(j,3+i);//Draws ground
-					if(level[i][j]==3)drawHoleCube(j,3+i);//Draw hole;
+					if(level[i][j]==1 || level[i][j] == 2)drawCube(j-hxo,3+i);//Draws ground
+					if(level[i][j]==3)drawHoleCube(j-hxo,3+i);//Draw hole;
 				}
 			}
 		}
 		
 		if(!b.hasBeenSunk())this.b.render(r);
+		
+		int length = 100;
+		int xo = (320-length)/2;
+		int yo = 150;
+		float barPos = (pow/this.maxPower)*length;
+		if(pow == 0.0f)barPos = -1;
+		for(int i = 0; i < length; i++){
+			for(int j = 0; j < 5; j++){
+				this.r.setPixel(xo + i, yo + j, !(i>(int)barPos)?this.b.color:this.r.makeRGB(64, 64, 64));
+			}
+		}
 		
 		this.r.finaliseRender();
 	}
@@ -164,9 +184,11 @@ public class RenderScreen extends Screen {
 		int dy =  y * (scale) - 1 - height;
 		
 		int sqS = 6;
-		for(int i = 0; i < sqS * sqS; i++){
-			int xx = i % sqS;
-			int yy = i / sqS;
+		int w = 6;
+		int h = 4;
+		for(int i = 0; i < w * h; i++){
+			int xx = i % w;
+			int yy = i / w;
 			this.r.setPixel(dx + xx - (sqS-1)/2, dy + yy + height-1, 0);
 		}
 		for(int i = height; i > 0; i--){//Draws pole

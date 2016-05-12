@@ -13,10 +13,11 @@ public class Ball {
 	private int r;
 	
 	public boolean falling, canMove;
-	private int color;
+	public int color;
 	private TextureMap texmap;
 	
 	public float vx, vy;
+	public int shots;
 	
 	public Ball(int x,int y){
 		this.pos = new Point(x,y);
@@ -44,6 +45,7 @@ public class Ball {
 		this.vx += mx;
 		this.vy += my;
 		canMove = false;
+		shots++;
 	}
 	
 	public void fall(){
@@ -107,7 +109,8 @@ public class Ball {
 				if(x2 + y2 < r * r){
 					int dx = x + xx;
 					int dy = y + yy;
-					re.setPixel(dx, dy, this.texmap.getPixel(dx,dy)+this.color);
+					float finalCol = (this.texmap.getPixel(dx, dy));
+					re.setPixel(dx, dy, (int)finalCol & this.color);
 				}
 			}
 		}
@@ -118,7 +121,7 @@ public class Ball {
 		this.vx = 0;
 		this.vy = 0;
 		this.falling = false;
-		genColor();
+		//genColor();
 	}
 	
 	public void setRespawnPos(){

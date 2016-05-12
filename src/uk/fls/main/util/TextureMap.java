@@ -2,6 +2,7 @@ package uk.fls.main.util;
 
 import java.awt.image.BufferedImage;
 
+import fls.engine.main.art.Art;
 import fls.engine.main.art.SplitImage;
 
 public class TextureMap {
@@ -17,10 +18,14 @@ public class TextureMap {
 	}
 	
 	public int getPixel(int x,int y){
-		int dx = (x % w);
-		int dy = (y / w) % h;
-		int c = this.data[dx + dy * w];
+		if(x < 0)x = -x;
+		if(y < 0)y = -y;
+		int c = this.data[(x % w) + (y % h) * w];
 		return c;
+	}
+	
+	public float getShadeVal(int x,int y){
+		return (float)getPixel(x, y)/0xFFFFFF;
 	}
 	
 	public static int[][] getPixles(String place){
@@ -48,6 +53,7 @@ public class TextureMap {
 		}else{
 			for(int i = 0; i < ss; i++){
 				int c = current[i];
+				int a = (c >> 24) & 0xFF;
 				int r = (c >> 16) & 0xFF;
 				int g = (c >> 8) & 0xFF;
 				int b = (c) & 0xFF;
@@ -55,7 +61,6 @@ public class TextureMap {
 				res[i] = rgb;
 			}
 		}
-		
 		return new int[][]{{w,h},res};
 	}
 }
