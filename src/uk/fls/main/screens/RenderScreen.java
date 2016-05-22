@@ -134,8 +134,16 @@ public class RenderScreen extends Screen {
 		for(int i = 0; i < this.level.w; i++){
 			for(int j = 0; j < this.level.h; j++){
 				if(this.level.levelData[i][j]==1 || this.level.levelData[i][j] == 2)drawCube(j,3+i);//Draws ground
-				if(this.level.levelData[i][j]==3){
+				if(this.level.levelData[i][j]==3){ // The hole
 					drawCube(j,3+i);
+					
+					int w = 6;
+					int h = 4;
+					for(int l = 0; l < w * h; l++){
+						int dx = l % w;
+						int dy = l / w;
+						r.setPixel((j * r.scale * 2 * 2) + dx + w - 3, (i * r.scale) + r.scale * 2 + dy + 1, 0);
+					}
 				}
 			}
 		}

@@ -20,15 +20,6 @@ public class Flag extends Entity{
 		
 		int dx = pos.getIX() + 5;
 		int dy =  pos.getIY() - 1 - height + (int)(height/3);
-		
-		int sqS = 6;
-		int w = 6;
-		int h = 4;
-		for(int i = 0; i < w * h; i++){
-			int xx = i % w;
-			int yy = i / w;
-			r.setPixel(dx + xx - (sqS-1)/2, dy + yy + height-1, 0);
-		}
 		for(int i = height; i > 0; i--){//Draws pole
 			for(int j = 0; j < 2; j++)
 				r.setPixel(dx + j, dy + i, poleCol);
