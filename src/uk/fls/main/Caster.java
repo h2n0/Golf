@@ -19,6 +19,7 @@ public class Caster extends Init{
 		skipInit();
 		setScreen(new RenderScreen());
 		showFPS();
+		setDesFrames(60);
 	}
 	
 	public static void main(String[] args){

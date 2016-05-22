@@ -1,12 +1,12 @@
-package uk.fls.main.screens;
+package uk.fls.main.screens.entitys;
 
 import fls.engine.main.util.Point;
 import fls.engine.main.util.Renderer;
+import uk.fls.main.util.Entity;
 import uk.fls.main.util.TextureMap;
 
-public class Ball {
+public class Ball extends Entity{
 	
-	public Point pos;
 	public Point respawn;
 	private int fallTime;
 	private boolean sunk;
@@ -20,8 +20,8 @@ public class Ball {
 	public int shots;
 	
 	public Ball(int x,int y){
-		this.pos = new Point(x,y);
-		r = 4;
+		super(x + (int)(4 * 1.5),y + (int)(4 * 2.5));
+		this.r = 4;
 		this.vx = 0;
 		this.vy = 0;
 		this.falling = false;
@@ -34,10 +34,11 @@ public class Ball {
 	}
 	
 	public void render(Renderer r){
-		
-		int dx = this.pos.getIX();
-		int dy = this.pos.getIY();
-		drawCircle(dx, dy - this.r, this.r, r);
+		if(!this.sunk){
+			int dx = this.pos.getIX();
+			int dy = this.pos.getIY();
+			drawCircle(dx, dy - this.r, this.r, r);
+		}
 	}
 	
 	public void move(float mx,float my){

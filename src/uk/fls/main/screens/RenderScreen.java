@@ -1,9 +1,19 @@
 package uk.fls.main.screens;
 
 import java.awt.Graphics;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 
+import fls.engine.main.art.Art;
 import fls.engine.main.screen.Screen;
+import fls.engine.main.util.Camera;
 import fls.engine.main.util.Renderer;
+import uk.fls.main.screens.entitys.Ball;
+import uk.fls.main.screens.entitys.Flag;
+import uk.fls.main.util.Entity;
+import uk.fls.main.util.Level;
 import uk.fls.main.util.TextureMap;
 
 public class RenderScreen extends Screen {
@@ -12,10 +22,6 @@ public class RenderScreen extends Screen {
 
 	private int w = 40;
 	private int h = 51;
-	int scale = 3;
-	private int[] trixels;
-	private int[] colors;
-	int[][] level;
 	
 	private int mx, my;
 	private boolean prevClick;
@@ -31,34 +37,35 @@ public class RenderScreen extends Screen {
 	
 	private int bgColor;
 	
-	private Ball b;
+	private Ball ball;
+	private Flag flag;
+	
+	private Level level;
+
+	private Camera cam;
+	private List<Entity> entitys;
+	
+	public class EntitySorter implements Comparator<Entity>{
+
+		@Override
+		public int compare(Entity e1, Entity e2) {
+			if(e1.pos.y < e2.pos.y)return 1;
+			if(e1.pos.y > e2.pos.y)return -1;
+			return 0;
+		}
+		
+	}
+	
+	private EntitySorter sorter;
 
 	public void postInit() {
 		this.r = new Renderer(this.game.image);
-
-		this.trixels = new int[w * h];
-		this.colors = new int[8 * 2];
-
-		int max = 255;
-
-		for (int i = 0; i < this.colors.length; i++) {
-			int a = (i & 8) > 0 ? max : (max & 0xFEFEFE) >> 1;
-			int r = (i & 4) > 0 ? a : 0;
-			int g = (i & 2) > 0 ? a : 0;
-			int b = (i & 1) > 0 ? a : 0;
-
-			int rgb = this.r.makeRGB(r, g, b);
-			this.colors[i] = rgb;
-		}
-
-		for (int i = 0; i < w * h; i++) {
-			int xx = i % w;
-			int yy = i / w;
-			int c = (xx & yy) % 16;
-			this.trixels[i] = c;
-		}
+		this.r.setScale(3);
 		
-		this.level = genLevel("level1");
+		this.sorter = new EntitySorter();
+		
+		this.level = new Level(this.r, "level2");
+		genLevel("level2");
 		
 		this.top = this.r.makeRGB(123,255,0);
 		this.dtop = (this.top & 0xFEFEFE) >> 1;
@@ -69,64 +76,76 @@ public class RenderScreen extends Screen {
 		//this.b.move(-1,0);
 		this.maxPower = 2;
 		this.bgColor = r.makeRGB(123, 123, 123);
+		this.cam = new Camera(0,0);
+		this.cam.w = this.r.getWidth();
+		this.cam.h = this.r.getHeight();
 	}
 
 	private float pow = 0;
 	
 	@Override
 	public void update() {
-		scale = 3;
+		sortEntitys();
 		maxPower = 2;
 		boolean click = this.input.leftMouseButton.justClicked();
-		this.mx = this.input.mouse.getX()/scale*scale/2;
-		this.my = this.input.mouse.getY()/scale*scale/2;
-		
-		if(this.b.canMove){
+		this.mx = this.input.mouse.getX()/r.scale*r.scale/2;
+		this.my = this.input.mouse.getY()/r.scale*r.scale/2;
+			
+		if(this.ball.canMove){
 			if(!click && this.prevClick){
-				int ax = b.pos.getIX() - mx;
-				int ay = b.pos.getIY() - my;
+				int ax = ball.pos.getIX() - mx;
+				int ay = ball.pos.getIY() - my;
 				float diff = (float)Math.atan2(ay, ax);
 				float dx = (float)Math.cos(diff);
 				float dy = (float)Math.sin(diff);
-				this.b.move(dx * (pow * this.maxPower), dy * (pow * this.maxPower));
+				this.ball.move(dx * (pow * this.maxPower), dy * (pow * this.maxPower));
 				pow = 0;
 			}else{
 				if(click){
 					pow += 0.05;
-					
 					pow %= this.maxPower;
 				}
 			}
 		}
 		
-		this.b.update(this.r);
+		for(int i = 0; i < this.entitys.size(); i++)this.entitys.get(i).update(r);
 		
-		if(this.b.hasBeenSunk()){
-			System.out.println(this.b.shots);
+		if(this.ball.hasBeenSunk()){
+			System.out.println(this.ball.shots);
 		}
 		
 		this.prevClick = click;
+		
+		if(this.input.isKeyPressed(this.input.a)){
+			Art.saveScreenShot(game, true);
+		}
+		this.cam.center(this.ball.pos.getIX(), this.ball.pos.getIY());
+		
+		//System.out.println(this.totalNanos);
 	}
+	
+	private int t = 0;
 
 	@Override
 	public void render(Graphics g) {
+		//this.r.setOffset(-(int)this.cam.pos.x, -(int)this.cam.pos.y);
 		this.r.fill(this.bgColor);
-
-		boolean maker = false;
 		
-		int hxo = 0;
-		
-		if(!maker){
-			int l = level.length;
-			for(int i = 0; i < l; i++){
-				for(int j = 0; j < l; j++){
-					if(level[i][j]==1 || level[i][j] == 2)drawCube(j-hxo,3+i);//Draws ground
-					if(level[i][j]==3)drawHoleCube(j-hxo,3+i);//Draw hole;
+		for(int i = 0; i < this.level.w; i++){
+			for(int j = 0; j < this.level.h; j++){
+				if(this.level.levelData[i][j]==1 || this.level.levelData[i][j] == 2)drawCube(j,3+i);//Draws ground
+				if(this.level.levelData[i][j]==3){
+					drawCube(j,3+i);
 				}
 			}
 		}
 		
-		if(!b.hasBeenSunk())this.b.render(r);
+
+		for(int i = 0; i < this.entitys.size(); i++)this.entitys.get(i).render(r);
+		
+		
+		//World has been rendered, do all of the GUI here
+		this.r.setOffset(0, 0);
 		
 		int length = 100;
 		int xo = (320-length)/2;
@@ -135,7 +154,7 @@ public class RenderScreen extends Screen {
 		if(pow == 0.0f)barPos = -1;
 		for(int i = 0; i < length; i++){
 			for(int j = 0; j < 5; j++){
-				this.r.setPixel(xo + i, yo + j, !(i>(int)barPos)?this.b.color:this.r.makeRGB(64, 64, 64));
+				this.r.setPixel(xo + i, yo + j, !(i>(int)barPos)?this.ball.color:this.r.makeRGB(64, 64, 64));
 			}
 		}
 		
@@ -163,55 +182,22 @@ public class RenderScreen extends Screen {
 	}
 	
 	public void drawCube(int x,int y){
-
+		x *= 2;
+		y *= 3;
 		boolean flip = x % 2 == 0;
 		if(y % 2 == 1)flip = !flip;
+		
+		y/=3;
+		
+		if(flip && x % 2 == 0){
+			x++;
+			flip = !flip;
+		}
 		
 		if(!flip){
 			drawHalf(x,y);
 			drawHalf(x+1,y);
 		}
-	}
-	
-	
-	private float time = 0;
-	public void drawHoleCube(int x,int y){
-		drawCube(x,y);
-		int poleCol = this.r.makeRGB(183, 183, 183);
-		int height = 20;
-		
-		int dx = x * scale * 2 + 5;
-		int dy =  y * (scale) - 1 - height;
-		
-		int sqS = 6;
-		int w = 6;
-		int h = 4;
-		for(int i = 0; i < w * h; i++){
-			int xx = i % w;
-			int yy = i / w;
-			this.r.setPixel(dx + xx - (sqS-1)/2, dy + yy + height-1, 0);
-		}
-		for(int i = height; i > 0; i--){//Draws pole
-			for(int j = 0; j < 2; j++)
-			this.r.setPixel(dx + j, dy + i, poleCol);
-		}
-		
-		//DrawsFlag
-		int s = 6;
-		int ys = s;
-		for (int j = 0; j < s * 2; j++) {
-			for (int i = -ys/2; i < ys/2; i++) {
-				float yo = (float)Math.sin((time/2) / 180 * Math.PI) * (s-ys);
-				int px = dx + j;
-				int py = dy + 4 + i + (int)yo;
-				boolean flip = (int)(px+time/20)/3%2==1;
-				this.r.setPixel(px + 1, py-1 + (flip?1:0), flip?this.r.makeRGB(123, 0, 0):this.r.makeRGB(255, 0, 0));
-			}
-			if (j % 2 == 0){
-				ys--;
-			}
-		}
-		time++;
 	}
 
 	public void draw(int x, int y, int c, boolean shade) {
@@ -221,14 +207,14 @@ public class RenderScreen extends Screen {
 		if (flip && shade)
 			c = (c & 0xEEEEEE) >> 1;
 
-		int ys = scale;
-		for (int j = 0; j < scale * 2; j++) {
+		int ys = r.scale;
+		for (int j = 0; j < r.scale * 2; j++) {
 			for (int i = -ys; i < ys; i++) {
-				int dx = (x * scale * 2) + j;
-				int dy = (y * scale) + i;
+				int dx = (x * r.scale * 2) + j;
+				int dy = (y * r.scale) + i;
 
 				if (flip) {
-					dx = ((x + 1) * scale * 2) - j - 1;
+					dx = ((x + 1) * r.scale * 2) - j - 1;
 				}
 				this.r.setPixel(dx, dy, c);
 			}
@@ -253,17 +239,25 @@ public class RenderScreen extends Screen {
 					res[y][x] = 1;//Ground
 				}else if(rgb == this.r.makeRGB(0, 255, 0)){
 					res[y][x] = 2;//Start of hole
-					px = x * scale * 2;
-					py = y * scale;
-					System.out.println("HUI");
+					px = x * r.scale * 2 * 2;
+					py = y * r.scale;
 				}else if(rgb == this.r.makeRGB(0, 0, 255)){
 					res[y][x] = 3;//End of hole
+					this.flag = new Flag(x * r.scale * 2 * 2, y * r.scale + r.scale);
 				}
 			}
 		}
 		
 		if(px == -1 || py == -1)throw new RuntimeException("The level dosne't contain a start point. Make sure that it has a hex value of #00FF00");
-		this.b = new Ball(px,py);
+		this.ball = new Ball(px,py);
+		
+		this.entitys = new ArrayList<Entity>();
+		this.entitys.add(this.ball);
+		this.entitys.add(this.flag);
 		return res;
+	}
+	
+	private void sortEntitys(){
+		Collections.sort(this.entitys, this.sorter);
 	}
 }
