@@ -1,4 +1,6 @@
 # Golf
+![Golf screenshot](./res/screenshot.png)
+Screenshot of current state when run.
 
 ## Dependancies
 You will need the following if you want to use this in eclipse.

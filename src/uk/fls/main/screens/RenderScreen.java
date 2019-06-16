@@ -59,7 +59,7 @@ public class RenderScreen extends Screen {
 	private EntitySorter sorter;
 
 	public void postInit() {
-		this.r = new Renderer(this.game.image);
+		this.r = new Renderer(this.game);
 		this.r.setScale(3);
 		
 		this.sorter = new EntitySorter();

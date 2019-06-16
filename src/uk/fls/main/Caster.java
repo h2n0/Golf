@@ -1,7 +1,5 @@
 package uk.fls.main;
 
-import java.math.BigInteger;
-
 import fls.engine.main.Init;
 import fls.engine.main.input.Input;
 import uk.fls.main.screens.RenderScreen;
@@ -19,7 +17,6 @@ public class Caster extends Init{
 		skipInit();
 		setScreen(new RenderScreen());
 		showFPS();
-		setDesFrames(60);
 	}
 	
 	public static void main(String[] args){
